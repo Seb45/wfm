@@ -1,9 +1,5 @@
 matplotlib
 pandas
-
-sqlite3
 datetime
-
 numpy
-
 plotly
