@@ -5,8 +5,7 @@ import pandas as pd
 import time
 import sqlite3
 import datetime as dt
-import altair as alt
-from vega_datasets import data
+
 import subprocess
 import numpy as np
 from getpass import getuser
