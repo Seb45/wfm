@@ -1,5 +1,9 @@
 matplotlib
 pandas
+vega_datasets
+sqlite3
 datetime
+
 numpy
+
 plotly
