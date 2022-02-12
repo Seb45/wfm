@@ -1,10 +1,12 @@
 import streamlit as st
 import requests
-
+import matplotlib.pyplot as plt
 import pandas as pd
 import time
 import sqlite3
 import datetime as dt
+import altair as alt
+from vega_datasets import data
 import subprocess
 import numpy as np
 from getpass import getuser
@@ -53,7 +55,7 @@ cursorobj=con.cursor()
     
 informe = st.sidebar.selectbox(
     'Elegí uno de los informes disponibles',
-    ('Cantidad por intervalo', 'otro')
+    ("Turnos publicados", 'Cantidad por intervalo')
 )
 
 if informe=="Utilizacion":
@@ -508,26 +510,43 @@ if informe=="Cantidad por intervalo":
     
     fig1 = go.Figure()
     
-    st.text (tipo_geografia+"  " + str(tipo_muid)+ "   " + str(fecha_informe))
+    st.text (tipo_geografia+"  " + str(tipo_muid)) 
+    st.text(str(fecha_informe))
     
     k=0
     for column in data_intervalo_:
         if k==0:
             pass
         else:
-            fig1.add_trace(go.Scatter(x=data_intervalo_["intervalo"], y=data_intervalo_[column],line=dict(color=colores[k], width=2),name=column))
             
+            # fig1.add_trace(go.Bar(x=data_intervalo_["intervalo"], y=data_intervalo_[column],name=column))
+            fig1.add_trace(go.Scatter(x=data_intervalo_["intervalo"], y=data_intervalo_[column],line=dict(color=colores[k], width=2),name=column))
+                     
         k+=1
     
 
+    
+    # alt.Chart(data_intervalo_).mark_area().encode()
 
     fig1.update_xaxes(type='category')
     fig1.update_layout(height=450, width=1200)
     st.plotly_chart(fig1, use_container_width=True)
+    # st.area_chart(data_intervalo_)
+    with st.expander("Ver Tabla Intervalos"):
+        st.table(data=data_intervalo_pivot.style.format('{:7,.0f}'))
 
+    with st.expander("Ver Tabla Detalle por RAC"):
+        col1, col2= st.columns(2)
+        with col1:
+            t_intervalo = st.time_input('Intervalo', dt.time(ahora.hour, ahora.minute))
+        with col2:
+            tipo_segmento=st.selectbox('Segmento', tuple(data_intervalo_pivot.columns)) 
 
-    st.table(data=data_intervalo_pivot)
-    
+        data_detalle_rac=pd.read_sql('select agentName, start, stop, substr(logonID,1,8) as LogonId from agent_schedule_detail a inner join traduccion_exception e on a.exception=e.exception where TZ="'+tipo_geografia+'" AND substr(schedDate,4, 4)||"-0"||substr(schedDate,1, 1)||"-"||substr(schedDate,2, 2)="'+str(fecha_informe)+'" AND muID="'+str(tipo_muid)+'" AND segmento="'+tipo_segmento+'" AND start<="'+str(t_intervalo)+'" and stop>"'+str(t_intervalo)+'" order by 1', con)
+   
+      
+        st.table(data=data_detalle_rac)
+        
     # if tipo_info=='Resumen':
     #     data_nousan_group=data_nousan.drop(columns=['UsuarioConectado', 'cliente','PROGRAMA','fecha', 'ip_login', 'ip_asignada'])
                  
@@ -554,4 +573,33 @@ if informe=="Cantidad por intervalo":
     #     supervisor_select=st.sidebar.radio("Supervisor", sorted(tupla_supervisores))
         
     #     st.table(data=data_nousan[ (data_nousan.NOMBRE_RESPONSABLE_SUPERVISOR==supervisor_select)] ) 
+if informe=="Turnos publicados":
+    data_resumen_turnos=pd.read_sql('SELECT * from s_region_turnos_diarios', con)
+
+    data_resumen_turnos_pivot=data_resumen_turnos.pivot(index='fecha', columns='TZ', values='cantidad')
+    data_resumen_turnos_pivot=data_resumen_turnos_pivot.fillna(0)
+    # st.bar_chart(data_intervalo_pivot)
+    data_resumen_turnos_pivot_=data_resumen_turnos_pivot.reset_index()
+    
+    fig1 = go.Figure()
+    
+    st.subheader ("Turnos publicados")
  
+    k=0
+    for column in data_resumen_turnos_pivot_:
+        if k==0:
+            pass
+        else:
+            fig1.add_trace(go.Bar(x=data_resumen_turnos_pivot_["fecha"], y=data_resumen_turnos_pivot_[column],name=column))
+            # fig1.add_trace(go.Bar(x=data_resumen_turnos_pivot_["fecha"], y=data_resumen_turnos_pivot_[column],line=dict(color=colores[k], width=2),name=column))
+            
+        k+=1
+    
+
+
+    fig1.update_xaxes(type='category')
+    fig1.update_layout(height=450, width=1200)
+    st.plotly_chart(fig1, use_container_width=True)
+    
+    with st.expander("Ver Tabla"):
+        st.table(data=data_resumen_turnos_pivot.style.format('{:7,.0f}')) 
