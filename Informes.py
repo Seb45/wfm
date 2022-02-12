@@ -531,13 +531,19 @@ if informe=="Cantidad por intervalo":
     fig1.update_layout(height=450, width=1200)
     st.plotly_chart(fig1, use_container_width=True)
     # st.area_chart(data_intervalo_)
+    
+    if tipo_geografia=="America/Lima" or tipo_geografia=="America/Lima":
+        hora_local=ahora.hour-5
+    else:
+        hora_local=ahora.hour-3
+    
     with st.expander("Ver Tabla Intervalos"):
         st.table(data=data_intervalo_pivot.style.format('{:7,.0f}'))
 
     with st.expander("Ver Tabla Detalle por RAC"):
         col1, col2= st.columns(2)
         with col1:
-            t_intervalo = st.time_input('Intervalo', dt.time(ahora.hour, ahora.minute))
+            t_intervalo = st.time_input('Intervalo', dt.time(hora_local, ahora.minute))
         with col2:
             tipo_segmento=st.selectbox('Segmento', tuple(data_intervalo_pivot.columns)) 
 
